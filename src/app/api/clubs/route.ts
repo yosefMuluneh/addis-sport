@@ -1,32 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { PrismaClient } from "@prisma/client";
 
-// In-memory store; replace with database in production
-let clubs = [
-  { sportCode: "1/1", sportName: "Football", clubCode: "AA001", clubName: "Addis United", subCity: "Bole", district: "03", phone: "0912345678" },
-  { sportCode: "1/1", sportName: "Basketball", clubCode: "AA002", clubName: "Ethio Hoopers", subCity: "Kirkos", district: "05", phone: "0987654321" },
-  // ... other initial data
-];
+const prisma = new PrismaClient();
 
+// GET: Fetch all clubs
 export async function GET() {
-  return NextResponse.json(clubs);
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const clubs = await prisma.club.findMany();
+    return NextResponse.json(clubs);
+  } catch (error) {
+    console.error("Error fetching clubs:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch clubs" },
+      { status: 500 }
+    );
+  }
 }
 
+
+// POST: Create a new club
 export async function POST(req: NextRequest) {
-  const newClub = await req.json();
-  clubs.push(newClub);
-  return NextResponse.json(newClub, { status: 201 });
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    console.log("the provided body", body)
+    const newClub = await prisma.club.create({
+      data: {
+        sportCode: body.sportCode,
+        sportName: body.sportName,
+        clubCode: body.clubCode,
+        clubName: body.clubName,
+        subCity: body.subCity,
+        district: body.district || null,
+        phone: body.phone || null,
+        registrationYear: body.registrationYear,
+        sportNameEn: body.sportNameEn || null,
+        clubNameEn: body.clubNameEn || null,
+        documentPath: body.documentPath || "[]",
+      },
+    });
+    return NextResponse.json(newClub);
+  } catch (error) {
+    console.error("Error creating club:", error);
+    return NextResponse.json(
+      { error: "Failed to create club" },
+      { status: 500 }
+    );
+  }
 }
 
-export async function PUT(req: NextRequest) {
-  const updatedClub = await req.json();
-  clubs = clubs.map((club) =>
-    club.clubCode === updatedClub.clubCode ? updatedClub : club
-  );
-  return NextResponse.json(updatedClub);
-}
-
-export async function DELETE(req: NextRequest) {
-  const { clubCode } = await req.json();
-  clubs = clubs.filter((club) => club.clubCode !== clubCode);
-  return NextResponse.json({ message: "Club deleted" });
-}

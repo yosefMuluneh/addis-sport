@@ -113,6 +113,21 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+@font-face {
+  font-family: "Noto Sans Ethiopic";
+  src: url("/NotoSansEthiopic-VariableFont_wdth,wght.ttf") format("truetype");
+  font-weight: 100 900; /* Variable font supports a range of weights */
+  font-style: normal;
+  font-display: swap; /* Improves font loading performance */
+}
+  
+
+body {
+  font-family: "Noto Sans Ethiopic", sans-serif;
+  font-size: 1.5rem; /* Increase base font size to 20px (1.25rem * 16px = 20px) */
+  line-height: 1.6; /* Adjust line height for better readability */
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

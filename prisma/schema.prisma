@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+model Admin {
+  id       String @id
+  username String @unique
+  password String
+}
+
+model Club {
+  id               String   @id @default(uuid())
+  sportCode        String
+  sportName        String
+  sportNameEn      String?  // Optional English transliteration
+  clubCode         String   @unique
+  clubName         String
+  clubNameEn       String?  // Optional English transliteration
+  subCity          String
+  district         String
+  phone            String
+  registrationYear String
+  documentPath     Json     // Changed to Json to store multiple file paths as a JSON array
+}
