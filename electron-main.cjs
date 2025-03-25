@@ -23,6 +23,9 @@ async function createWindow() {
     show: false,
   });
 
+  const { width, height } = require("electron").screen.getPrimaryDisplay().workAreaSize;
+  mainWindow.setSize(width, height);
+
   const uploadDir = path.join(app.getPath("userData"), "uploads");
   console.log(`Setting UPLOAD_DIR to: ${uploadDir}`);
   process.env.UPLOAD_DIR = uploadDir;
@@ -50,13 +53,13 @@ async function createWindow() {
   try {
     process.chdir(serverPath);
     console.log(`Set working directory to: ${serverPath}`);
+    console.log(`Directory contents: ${fs.readdirSync(serverPath).join(", ")}`);
   } catch (err) {
     console.error(`Failed to change directory: ${err.message}`);
     app.quit();
     return;
   }
 
-  // Set up writable database
   const dbSourcePath = path.join(serverPath, "prisma", "dev.db");
   const dbDir = path.join(app.getPath("userData"), "db");
   const dbPath = path.join(dbDir, "dev.db");
@@ -73,8 +76,7 @@ async function createWindow() {
     console.log(`Database already exists at ${dbPath}`);
   }
 
-  // Ensure the database is writable
-  fs.chmodSync(dbPath, 0o666); // Read/write for owner and group
+  fs.chmodSync(dbPath, 0o666);
   process.env.DATABASE_URL = `file:${dbPath}`;
   console.log(`Set DATABASE_URL to: ${process.env.DATABASE_URL}`);
 
@@ -95,7 +97,9 @@ async function createWindow() {
   }
 
   setTimeout(() => {
-    mainWindow.loadURL(`http://localhost:${port}/auth/signin`).then(() => {
+    const url = `http://localhost:${port}/auth/signin`;
+    console.log(`Loading URL: ${url}`);
+    mainWindow.loadURL(url).then(() => {
       console.log("URL loaded successfully");
       mainWindow.show();
     }).catch((err) => {
@@ -103,6 +107,9 @@ async function createWindow() {
       app.quit();
     });
   }, 2000);
+
+  // Open DevTools for debugging
+  mainWindow.webContents.openDevTools();
 }
 
 app.on("ready", () => {

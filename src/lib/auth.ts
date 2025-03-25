@@ -19,6 +19,8 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        console.log({credentials})
+
         const admin = await prisma.admin.findUnique({
           where: { username: credentials.username },
         });

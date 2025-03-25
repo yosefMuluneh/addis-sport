@@ -1,19 +1,35 @@
 const fs = require("fs");
 const path = require("path");
 
-const sourcePath = path.join(__dirname, "prisma", "dev.db");
+const sourceDbPath = path.join(__dirname, "prisma", "dev.db");
 const targetDir = path.join(__dirname, ".next", "standalone", "prisma");
-const targetPath = path.join(targetDir, "dev.db");
+const targetDbPath = path.join(targetDir, "dev.db");
 
+const staticSourceDir = path.join(__dirname, ".next", "static");
+const staticTargetDir = path.join(__dirname, ".next", "standalone", ".next", "static");
+
+// Copy database
 if (!fs.existsSync(targetDir)) {
   fs.mkdirSync(targetDir, { recursive: true });
   console.log(`Created directory: ${targetDir}`);
 }
 
-if (fs.existsSync(sourcePath)) {
-  fs.copyFileSync(sourcePath, targetPath);
-  console.log(`Copied ${sourcePath} to ${targetPath}`);
+if (fs.existsSync(sourceDbPath)) {
+  fs.copyFileSync(sourceDbPath, targetDbPath);
+  console.log(`Copied ${sourceDbPath} to ${targetDbPath}`);
 } else {
-  console.error(`Error: Source database file ${sourcePath} not found. Run 'npm run seed' first.`);
+  console.error(`Error: Source database file ${sourceDbPath} not found. Run 'npm run seed' first.`);
+  process.exit(1);
+}
+
+// Copy static assets
+if (fs.existsSync(staticSourceDir)) {
+  if (!fs.existsSync(path.dirname(staticTargetDir))) {
+    fs.mkdirSync(path.dirname(staticTargetDir), { recursive: true });
+  }
+  fs.cpSync(staticSourceDir, staticTargetDir, { recursive: true });
+  console.log(`Copied static assets from ${staticSourceDir} to ${staticTargetDir}`);
+} else {
+  console.error(`Error: Static directory ${staticSourceDir} not found.`);
   process.exit(1);
 }
