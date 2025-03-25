@@ -3,9 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   output: 'standalone',
+  
   eslint: {
     ignoreDuringBuilds: true, // Ignores all ESLint errors during build
   },
+  serverExternalPackages: ["@prisma/client", "prisma"],
   headers: async () => [
     {
       source: "/(.*)",

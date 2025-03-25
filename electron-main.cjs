@@ -1,102 +1,119 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
-const { exec } = require("child_process");
+const net = require("net");
 const fs = require("fs");
 
-const serverPath = path.join(__dirname, ".next/standalone");
-const uploadDir = path.join(app.getPath("userData"), "uploads"); // Persistent storage
+let mainWindow;
 
-let win;
-let serverProcess;
-
-function startServer() {
-  // Set environment variable for upload directory
-  process.env.UPLOAD_DIR = uploadDir;
-
-  // Ensure upload directory exists
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
-  // Copy public folder
-  const publicSource = path.join(__dirname, "public");
-  const publicDest = path.join(serverPath, "public");
-  if (!fs.existsSync(publicDest) && fs.existsSync(publicSource)) {
-    fs.cpSync(publicSource, publicDest, { recursive: true });
-  }
-
-  // Copy prisma folder
-  const prismaSource = path.join(__dirname, "prisma");
-  const prismaDest = path.join(serverPath, "prisma");
-  if (!fs.existsSync(prismaDest) && fs.existsSync(prismaSource)) {
-    fs.cpSync(prismaSource, prismaDest, { recursive: true });
-  }
-
-  // Copy .next/static folder
-  const staticSource = path.join(__dirname, ".next/static");
-  const staticDest = path.join(serverPath, ".next/static");
-  if (!fs.existsSync(staticDest) && fs.existsSync(staticSource)) {
-    fs.cpSync(staticSource, staticDest, { recursive: true });
-  }
-
-  // Sync initial uploads to public/uploads
-  const uploadsDest = path.join(serverPath, "public/uploads");
-  if (!fs.existsSync(uploadsDest)) {
-    fs.mkdirSync(uploadsDest, { recursive: true });
-  }
-  if (fs.existsSync(uploadDir)) {
-    fs.readdirSync(uploadDir).forEach((file) => {
-      const src = path.join(uploadDir, file);
-      const dest = path.join(uploadsDest, file);
-      if (!fs.existsSync(dest)) {
-        fs.copyFileSync(src, dest);
-      }
+async function getFreePort(startPort) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.listen(startPort, () => {
+      const { port } = server.address();
+      server.close(() => resolve(port));
     });
-  }
-
-  // Start the Next.js server
-  serverProcess = exec("node server.js", { cwd: serverPath, env: { ...process.env } }, (err) => {
-    if (err) console.error("Server error:", err);
+    server.on("error", () => getFreePort(startPort + 1).then(resolve));
   });
-
-  serverProcess.stdout.on("data", (data) => console.log(`Server: ${data}`));
-  serverProcess.stderr.on("data", (data) => console.error(`Server Error: ${data}`));
 }
 
-function createWindow() {
-  win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-    },
+async function createWindow() {
+  console.log("Creating Electron window...");
+  mainWindow = new BrowserWindow({
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
+    show: false,
   });
 
-  win.loadURL("http://localhost:3000");
-  win.webContents.openDevTools();
+  const uploadDir = path.join(app.getPath("userData"), "uploads");
+  console.log(`Setting UPLOAD_DIR to: ${uploadDir}`);
+  process.env.UPLOAD_DIR = uploadDir;
 
-  win.on("closed", () => {
-    win = null; // Fixed: Removed extra parenthesis
-  });
+  const port = await getFreePort(3000);
+  process.env.PORT = port.toString();
+  console.log(`Using port: ${port}`);
+
+  const serverPath = app.isPackaged
+    ? path.join(process.resourcesPath, "standalone")
+    : path.join(__dirname, ".next", "standalone");
+  console.log(`Server path: ${serverPath}`);
+
+  if (!fs.existsSync(serverPath)) {
+    console.error(`Error: Directory does not exist: ${serverPath}`);
+    if (app.isPackaged) {
+      console.log(`Contents of resources: ${fs.readdirSync(process.resourcesPath).join(", ")}`);
+    } else {
+      console.log(`Contents of dir: ${fs.readdirSync(__dirname).join(", ")}`);
+    }
+    app.quit();
+    return;
+  }
+
+  try {
+    process.chdir(serverPath);
+    console.log(`Set working directory to: ${serverPath}`);
+  } catch (err) {
+    console.error(`Failed to change directory: ${err.message}`);
+    app.quit();
+    return;
+  }
+
+  // Set up writable database
+  const dbSourcePath = path.join(serverPath, "prisma", "dev.db");
+  const dbDir = path.join(app.getPath("userData"), "db");
+  const dbPath = path.join(dbDir, "dev.db");
+
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+    console.log(`Created db directory: ${dbDir}`);
+  }
+
+  if (!fs.existsSync(dbPath)) {
+    fs.copyFileSync(dbSourcePath, dbPath);
+    console.log(`Copied database from ${dbSourcePath} to ${dbPath}`);
+  } else {
+    console.log(`Database already exists at ${dbPath}`);
+  }
+
+  // Ensure the database is writable
+  fs.chmodSync(dbPath, 0o666); // Read/write for owner and group
+  process.env.DATABASE_URL = `file:${dbPath}`;
+  console.log(`Set DATABASE_URL to: ${process.env.DATABASE_URL}`);
+
+  const serverFile = path.join(serverPath, "server.js");
+  if (!fs.existsSync(serverFile)) {
+    console.error(`Error: server.js not found at ${serverFile}`);
+    app.quit();
+    return;
+  }
+
+  try {
+    require(serverFile);
+    console.log("Starting Next.js server...");
+  } catch (err) {
+    console.error(`Failed to start Next.js server: ${err.message}`);
+    app.quit();
+    return;
+  }
+
+  setTimeout(() => {
+    mainWindow.loadURL(`http://localhost:${port}/auth/signin`).then(() => {
+      console.log("URL loaded successfully");
+      mainWindow.show();
+    }).catch((err) => {
+      console.error(`Failed to load URL: ${err.message}`);
+      app.quit();
+    });
+  }, 2000);
 }
 
 app.on("ready", () => {
-  startServer();
-  setTimeout(createWindow, 1000);
+  console.log("App is ready");
+  createWindow();
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    if (serverProcess) serverProcess.kill();
-    app.quit();
-  }
+  if (process.platform !== "darwin") app.quit();
 });
 
 app.on("activate", () => {
-  if (win === null) createWindow();
-});
-
-app.on("quit", () => {
-  if (serverProcess) serverProcess.kill();
+  if (mainWindow === null) createWindow();
 });
