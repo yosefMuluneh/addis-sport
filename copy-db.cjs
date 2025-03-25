@@ -8,6 +8,9 @@ const targetDbPath = path.join(targetDir, "dev.db");
 const staticSourceDir = path.join(__dirname, ".next", "static");
 const staticTargetDir = path.join(__dirname, ".next", "standalone", ".next", "static");
 
+const apiSourceDir = path.join(__dirname, ".next", "server", "app", "api");
+const apiTargetDir = path.join(__dirname, ".next", "standalone", "app", "api");
+
 // Copy database
 if (!fs.existsSync(targetDir)) {
   fs.mkdirSync(targetDir, { recursive: true });
@@ -32,4 +35,12 @@ if (fs.existsSync(staticSourceDir)) {
 } else {
   console.error(`Error: Static directory ${staticSourceDir} not found.`);
   process.exit(1);
+}
+
+// Copy API routes
+if (fs.existsSync(apiSourceDir)) {
+  fs.cpSync(apiSourceDir, apiTargetDir, { recursive: true });
+  console.log(`Copied API routes from ${apiSourceDir} to ${apiTargetDir}`);
+} else {
+  console.log(`Warning: API source directory ${apiSourceDir} not found—check Next.js structure`);
 }

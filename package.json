@@ -24,7 +24,10 @@
     "productName": "Addis Sport",
     "asar": true,
     "files": [
-      "electron-main.cjs"
+      "electron-main.cjs",
+      ".next/standalone/**/*",
+      "prisma/**/*",
+      "public/**/*"
     ],
     "extraResources": [
       {

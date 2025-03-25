@@ -23,16 +23,17 @@ async function createWindow() {
     show: false,
   });
 
-  const { width, height } = require("electron").screen.getPrimaryDisplay().workAreaSize;
-  mainWindow.setSize(width, height);
-
   const uploadDir = path.join(app.getPath("userData"), "uploads");
   console.log(`Setting UPLOAD_DIR to: ${uploadDir}`);
   process.env.UPLOAD_DIR = uploadDir;
 
   const port = await getFreePort(3000);
   process.env.PORT = port.toString();
+  process.env.NEXTAUTH_URL = `http://localhost:${port}`;
+  process.env.NEXTAUTH_SECRET = "1@#3-Addis-*76gsf-l09&-#3-Add-%$#@gsf-l09-%$#asadakdj;qwpoduncj"; // Explicitly set
   console.log(`Using port: ${port}`);
+  console.log(`NEXTAUTH_URL set to: ${process.env.NEXTAUTH_URL}`);
+  console.log(`NEXTAUTH_SECRET set to: ${process.env.NEXTAUTH_SECRET}`);
 
   const serverPath = app.isPackaged
     ? path.join(process.resourcesPath, "standalone")
@@ -88,27 +89,33 @@ async function createWindow() {
   }
 
   try {
-    require(serverFile);
     console.log("Starting Next.js server...");
+    require(serverFile);
+    console.log("Next.js server required successfully");
   } catch (err) {
-    console.error(`Failed to start Next.js server: ${err.message}`);
+    console.error(`Failed to start Next.js server: ${err.stack}`);
     app.quit();
     return;
   }
+
+
 
   setTimeout(() => {
     const url = `http://localhost:${port}/auth/signin`;
     console.log(`Loading URL: ${url}`);
     mainWindow.loadURL(url).then(() => {
       console.log("URL loaded successfully");
+      const { width, height } = require("electron").screen.getPrimaryDisplay().workAreaSize;
+    mainWindow.setSize(width, height);
+      mainWindow.maximize();
+      console.log("Window maximized");
       mainWindow.show();
     }).catch((err) => {
       console.error(`Failed to load URL: ${err.message}`);
       app.quit();
     });
-  }, 2000);
+  }, 5000);
 
-  // Open DevTools for debugging
   mainWindow.webContents.openDevTools();
 }
 
