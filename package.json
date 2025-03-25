@@ -11,7 +11,7 @@
   "main": "electron-main.cjs",
   "scripts": {
     "dev": "next dev --turbopack",
-   "build": "prisma generate && next build && mkdir -p .next/standalone/prisma && cp prisma/dev.db .next/standalone/prisma/",
+    "build": "prisma generate && next build && node copy-db.cjs",
     "package": "npm run build && electron-builder --publish never",
     "start": "next start",
     "electron": "electron .",
