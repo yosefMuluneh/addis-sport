@@ -106,7 +106,7 @@ async function createWindow() {
     mainWindow.loadURL(url).then(() => {
       console.log("URL loaded successfully");
       const { width, height } = require("electron").screen.getPrimaryDisplay().workAreaSize;
-    mainWindow.setSize(width, height);
+      mainWindow.setSize(width, height);
       mainWindow.maximize();
       console.log("Window maximized");
       mainWindow.show();
@@ -116,7 +116,6 @@ async function createWindow() {
     });
   }, 5000);
 
-  mainWindow.webContents.openDevTools();
 }
 
 app.on("ready", () => {
