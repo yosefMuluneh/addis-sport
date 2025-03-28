@@ -8,21 +8,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ file
   console.log("GET /api/uploads/:filename");
   const session = await getServerSession(authOptions);
   if (!session) {
-    console.log("Unauthorized access attempt");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { filename } = await params
 
-  console.log("file name grabed", filename)
 
   const uploadDir = process.env.UPLOAD_DIR || join(process.cwd(), "public/uploads");
   const filePath = join(uploadDir, filename);
 
-  console.log("we are here---------------")
-  console.log(`GET /api/uploads/${filename}`);
-  console.log(`Resolved uploadDir: ${uploadDir}`);
-  console.log(`Attempting to read file: ${filePath}`);
+ 
 
   try {
     const file = await readFile(filePath);

@@ -45,6 +45,11 @@ export default function TableComponent({ data, setData }: TableProps) {
     { key: "documentPath", label: translations[language].documentPath },
     { key: "actions", label: "" }, // Custom key for actions
   ];
+
+  // extract clubCodes and clubNames from paginatedData
+  const clubCodes = paginatedData.map((item) => item.clubCode);
+  const clubNames = paginatedData.map((item) => item.clubName);
+
   return (
     <div className="w-full bg-background rounded-xl shadow-md border border-border dark:bg-gray-800 dark:border-blue-900">
       <div className="flex justify-between p-4">
@@ -61,6 +66,8 @@ export default function TableComponent({ data, setData }: TableProps) {
               language={language}
               translations={translations}
               subCities={subCities}
+              clubCodes={clubCodes}
+              clubNames={clubNames}
             />
           </DialogContent>
         </Dialog>

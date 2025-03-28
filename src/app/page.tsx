@@ -29,7 +29,9 @@ export default function Page() {
   const filteredData = data.filter(
     (item: TableData) =>
       item.clubCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.phone && item.phone.includes(searchTerm))
+      (item.phone && item.phone.includes(searchTerm) ||
+      item.clubName.toLowerCase().includes(searchTerm.toLowerCase()))
+
   );
 
   if (status === "loading") return <div>በመጫን ላይ...</div>;
@@ -54,7 +56,7 @@ export default function Page() {
             </div>
           </div>
           <Input
-            placeholder="በክለብ ኮድ ወይም ስልክ ቁጥር ፈልግ"
+            placeholder="በክለብ ኮድ ወይም በክለብ ስም ወይም ስልክ ቁጥር ፈልግ"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="mb-6 max-w-md text-lg"

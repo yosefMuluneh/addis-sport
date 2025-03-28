@@ -26,7 +26,7 @@ model Club {
   sportName        String
   sportNameEn      String?  // Optional English transliteration
   clubCode         String   @unique
-  clubName         String
+  clubName         String   
   clubNameEn       String?  // Optional English transliteration
   subCity          String
   district         String

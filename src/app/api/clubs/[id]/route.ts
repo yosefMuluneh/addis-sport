@@ -18,7 +18,6 @@ export async function GET(
   //get id from params
   const { id } = await params;
 
-  console.log("get id of the club", id)
 
   try {
     const club = await prisma.club.findUnique({
@@ -45,10 +44,8 @@ export async function PUT(
     
     //get id from params
     const { id } = await params;
-    console.log("id", id);
     try {
         const body = await req.json();
-        console.log("body--file delete/upload....", body);
         const updatedClub = await prisma.club.update({
         where: { id: id as string },
         data: { ...body },

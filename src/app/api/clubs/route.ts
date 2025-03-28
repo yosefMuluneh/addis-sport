@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    console.log("the provided body", body)
     const newClub = await prisma.club.create({
       data: {
         sportCode: body.sportCode,
@@ -54,7 +53,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Error creating club:", error);
     return NextResponse.json(
-      { error: "Failed to create club" },
+      { error: "Failed to create club", details: error },
       { status: 500 }
     );
   }
