@@ -62,6 +62,14 @@ export default function CreateClubForm({
     try {
       let documentPath = "[]";
 
+      const existingClubCode = clubCodes.find((code) => code === formData.clubCode);
+      const existingClubName = clubNames.find((name) => name === formData.clubName);
+      if (existingClubCode || existingClubName) {
+        setSuccess(false);
+        setResponseMessage("Club code or name already exists");
+        return;
+      }
+
       // Upload files if any
       if (files.length > 0) {
         const formData = new FormData();
@@ -85,13 +93,7 @@ export default function CreateClubForm({
       }
 
       // Create the club with the uploaded file paths
-      const existingClubCode = clubCodes.find((code) => code === formData.clubCode);
-      const existingClubName = clubNames.find((name) => name === formData.clubName);
-      if (existingClubCode || existingClubName) {
-        setSuccess(false);
-        setResponseMessage("Club code or name already exists");
-        return;
-      }
+      
       const res = await fetch("/api/clubs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
